@@ -33,7 +33,6 @@ class Client:
                 except ConnectionResetError:
                     self.close()
 
-
     def close(self) -> None:
         self._connected = False
         self._writer.close()
