@@ -20,7 +20,7 @@ class Client:
     async def read(self, n: int = -1) -> bytes:
         data_read = await self._reader.read(n)
         if not data_read:
-            self._connected = False
+            self.close()
 
         return data_read
     
