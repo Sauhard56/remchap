@@ -16,7 +16,7 @@ class Listener:
 
     async def start_server(self, port: int) -> None:
         if self._running:
-            raise RuntimeError("Listener already running on port", self._port)
+            raise RuntimeError("listener already running on port", self._port)
         
         family = socket.AF_INET if self._ip.version == 4 else socket.AF_INET6
         sock = socket.socket(family, socket.SOCK_STREAM, socket.IPPROTO_TCP)
