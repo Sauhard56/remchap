@@ -14,11 +14,11 @@ async def handle_client(client: Client) -> None:
     while client.connected:
         byte_read = await client.read(1)
         buffer.extend(byte_read)
-        
+
         if buffer[-1:] == b"\n":
             for c in clients:
                 await c.write(buffer)
-            
+
             buffer.clear()
     # -------------------------
     clients.remove(client)
@@ -38,6 +38,6 @@ async def main() -> None:
         tasks.append(task)
 
     await asyncio.gather(*tasks)
-    
 
-asyncio.run(main())    
+
+asyncio.run(main())
