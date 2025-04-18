@@ -63,9 +63,13 @@ class StartupWindow(BaseWindow):
 
             try:
                 client = Client()
-                await client.connect(host, port)
+                await client.connect(host, port, timeout=5.0)
             except ConnectionRefusedError:
-                messagebox.showerror("Connection error", "Unable to connect to host.")
+                messagebox.showerror("Connection Error", "Unable to connect to host.")
+                return
+            except TimeoutError:
+                messagebox.showerror("Connection Error",
+                                     "Connection timed out (took longer than 5.0s).")
                 return
         finally:
             print(client.ip, client.port, client.connected)
