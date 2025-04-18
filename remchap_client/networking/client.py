@@ -12,12 +12,13 @@ class Client:
         self._writer = None
         self._port = None
         self._ip = None
-        
-    async def connect(self, host: str, port: int) -> None:
+
+    async def connect(self, host: str, port: int, timeout: int | None = None) -> None:
         if self._connected:
             self.disconnect()
 
-        self._reader, self._writer = await asyncio.open_connection(host, port)
+        self._reader, self._writer = await asyncio.wait_for(
+            await asyncio.open_connection(host, port), timeout)
 
         sock: socket.socket = self._writer.get_extra_info("socket")
         self._ip, self._port = sock.getpeername()[:2]
@@ -53,11 +54,11 @@ class Client:
     @property
     def ip(self) -> str | None:
         return self._ip
-    
+
     @property
     def port(self) -> int | None:
         return self._port
-    
+
     @property
     def connected(self) -> bool:
         return self._connected
