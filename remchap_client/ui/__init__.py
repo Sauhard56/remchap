@@ -1,5 +1,5 @@
 from .main_window import MainWindow
-from .startup_window import StartupWindow
+from .connection_window import ConnectionWindow
 
 
-__all__ = ["MainWindow", "StartupWindow"]
+__all__ = ["MainWindow", "ConnectionWindow"]

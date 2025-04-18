@@ -1,6 +1,6 @@
 import customtkinter
 
-from .startup_window import StartupWindow
+from .connection_window import ConnectionWindow
 from .helper import AsyncDispatcher
 
 
@@ -11,11 +11,11 @@ class MainWindow(customtkinter.CTk):
         self.withdraw() # Hide the window
 
         self.dispatcher = AsyncDispatcher()
-        self.startup_wnd = StartupWindow(self, self.dispatcher)
-        self.startup_wnd.on_close(self._after_startup_closed)
+        self.connection_wnd = ConnectionWindow(self, self.dispatcher)
+        self.connection_wnd.on_close(self._after_startup_closed)
 
     def _after_startup_closed(self) -> None:
-        client = self.startup_wnd.client
+        client = self.connection_wnd.client
         if client is None:
             self.destroy()
             return

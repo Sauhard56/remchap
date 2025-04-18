@@ -7,7 +7,7 @@ from .toplevel_base import TopLevelBase
 from ..networking import Client
 
 
-class StartupWindow(TopLevelBase):
+class ConnectionWindow(TopLevelBase):
     def __init__(self, root: customtkinter.CTk, dispatcher: AsyncDispatcher):
         super().__init__(root)
 
