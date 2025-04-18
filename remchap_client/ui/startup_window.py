@@ -56,18 +56,18 @@ class StartupWindow(BaseWindow):
                 _ = ip_address(host)
                 port = int(self._port_var.get())
             except ValueError:
-                messagebox.showerror("Error", "Invalid host or port")
+                messagebox.showerror("Parsing Error", "Invalid host or port.")
                 return
 
             if not 1 <= port <= 65535:
-                messagebox.showerror("Error", "Port out of range (1 - 65535)")
+                messagebox.showerror("Parsing Error", "Port out of range (1 - 65535).")
                 return
 
             try:
                 client = Client()
                 await client.connect(host, port)
             except ConnectionRefusedError:
-                messagebox.showerror("Connection error", "Unable to connect to host")
+                messagebox.showerror("Connection error", "Unable to connect to host.")
                 return
         finally:
             self._host_entry.configure(state="normal")
