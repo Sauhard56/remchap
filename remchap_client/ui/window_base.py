@@ -5,13 +5,14 @@ from typing import Coroutine
 import customtkinter
 
 
-class BaseWindow(customtkinter.CTk):
+class BaseWindow(customtkinter.CTkToplevel):
 
-    def __init__(self, fg_color = None, **kwargs):
-        super().__init__(fg_color, **kwargs)
+    def __init__(self, *args, fg_color = None, **kwargs):
+        super().__init__(*args, fg_color=fg_color, **kwargs)
+
+        self.protocol("WM_DELETE_WINDOW", self._quit)
 
         self.__async_event_loop = asyncio.new_event_loop()
-
         threading.Thread(target=self.__start_event_loop, daemon=True).start()
 
     def _schedule_async_to_thread(self, coro: Coroutine) -> None:
@@ -22,3 +23,7 @@ class BaseWindow(customtkinter.CTk):
     def __start_event_loop(self) -> None:  # This method must be called from a worker thread
         asyncio.set_event_loop(self.__async_event_loop)
         self.__async_event_loop.run_forever()
+
+    def _quit(self) -> None:
+        self.quit()
+        self.destroy()

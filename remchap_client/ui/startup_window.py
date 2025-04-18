@@ -1,15 +1,14 @@
-from ipaddress import ip_address
 from tkinter import messagebox
 
 import customtkinter
 
-from .base_window import BaseWindow
+from .window_base import BaseWindow
 from ..networking import Client
 
 
 class StartupWindow(BaseWindow):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, root: customtkinter.CTk):
+        super().__init__(root)
 
         self._client = None
 
@@ -43,7 +42,7 @@ class StartupWindow(BaseWindow):
 
         # Enter key callbacks
         self._host_entry.bind("<Return>", lambda _: self._port_entry.focus())
-        self._port_entry.bind("<Return>", lambda _: (self.focus(), self.connect_button.invoke()))
+        self._port_entry.bind("<Return>", lambda _: (self.focus(), self._connect_button.invoke()))
 
     async def _connect_button_callback(self) -> None:
         self._host_entry.configure(state="disabled")
@@ -53,7 +52,7 @@ class StartupWindow(BaseWindow):
         try:
             host = self._host_var.get()
             try:
-                _ = ip_address(host)
+                # _ = ip_address(host)
                 port = int(self._port_var.get())
             except ValueError:
                 messagebox.showerror("Parsing Error", "Invalid host or port.")
@@ -70,12 +69,13 @@ class StartupWindow(BaseWindow):
                 messagebox.showerror("Connection error", "Unable to connect to host.")
                 return
         finally:
+            print(client.ip, client.port, client.connected)
             self._host_entry.configure(state="normal")
             self._port_entry.configure(state="normal")
             self._connect_button.configure(state="normal")
 
         self._client = client
-        self.after(0, self.destroy)
+        self.after(0, self._quit)
 
     @property
     def client(self) -> Client | None:
