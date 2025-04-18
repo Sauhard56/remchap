@@ -1,9 +1,9 @@
-from .ui import RootWindow
+from .ui import App
 
 
 def main() -> None:
-    root = RootWindow()
-    root.main()
+    app = App()
+    app.run()
 
 
 main()

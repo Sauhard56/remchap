@@ -6,7 +6,6 @@ import customtkinter
 
 
 class BaseWindow(customtkinter.CTkToplevel):
-
     def __init__(self, *args, fg_color = None, **kwargs):
         super().__init__(*args, fg_color=fg_color, **kwargs)
 
