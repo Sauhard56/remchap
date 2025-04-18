@@ -1,4 +1,5 @@
-from .app import App
+from .main_window import MainWindow
 from .startup_window import StartupWindow
 
-__all__ = ["App", "StartupWindow"]
+
+__all__ = ["MainWindow", "StartupWindow"]

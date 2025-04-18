@@ -2,12 +2,13 @@ from tkinter import messagebox
 
 import customtkinter
 
-from .window_base import BaseWindow
+from .helper import AsyncDispatcher
+from .toplevel_base import TopLevelBase
 from ..networking import Client
 
 
-class StartupWindow(BaseWindow):
-    def __init__(self, root: customtkinter.CTk):
+class StartupWindow(TopLevelBase):
+    def __init__(self, root: customtkinter.CTk, dispatcher: AsyncDispatcher):
         super().__init__(root)
 
         self._client = None
@@ -34,10 +35,8 @@ class StartupWindow(BaseWindow):
         self._connect_button = customtkinter.CTkButton(
             self,
             text="Connect",
-            command=lambda: self._schedule_async_to_thread(
-                self._connect_button_callback()
-            )
-        )
+            command=lambda: dispatcher.schedule_async_to_thread(
+                self._connect_button_callback()))
         self._connect_button.pack(pady=(30, 0))
 
         # Enter key callbacks
@@ -72,13 +71,12 @@ class StartupWindow(BaseWindow):
                                      "Connection timed out (took longer than 5.0s).")
                 return
         finally:
-            print(client.ip, client.port, client.connected)
             self._host_entry.configure(state="normal")
             self._port_entry.configure(state="normal")
             self._connect_button.configure(state="normal")
 
         self._client = client
-        self.after(0, self._quit)
+        self.after(0, self.destroy)
 
     @property
     def client(self) -> Client | None:

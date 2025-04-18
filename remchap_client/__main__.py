@@ -1,9 +1,9 @@
-from .ui import App
+from .ui import MainWindow
 
 
 def main() -> None:
-    app = App()
-    app.run()
+    wnd = MainWindow()
+    wnd.mainloop()
 
 
 main()
