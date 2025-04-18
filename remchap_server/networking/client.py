@@ -23,7 +23,7 @@ class Client:
             self.close()
 
         return data_read
-    
+
     async def write(self, data: bytes | bytearray | Sequence[int]) -> None:
         if self._connected:
             async with self._write_lock:
@@ -40,11 +40,11 @@ class Client:
     @property
     def ip(self) -> str:
         return str(self._ip.ipv4_mapped or self._ip)
-    
+
     @property
     def port(self) -> int:
         return self._port
-    
+
     @property
     def connected(self) -> bool:
         return self._connected

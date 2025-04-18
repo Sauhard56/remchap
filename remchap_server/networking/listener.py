@@ -17,13 +17,14 @@ class Listener:
     async def start_server(self, port: int) -> None:
         if self._running:
             raise RuntimeError("listener already running on port", self._port)
-        
+
         family = socket.AF_INET if self._ip.version == 4 else socket.AF_INET6
         sock = socket.socket(family, socket.SOCK_STREAM, socket.IPPROTO_TCP)
 
         if family == socket.AF_INET6:
-            sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0) # Allow both IPv4 and IPv6 connections
-        
+            sock.setsockopt(socket.IPPROTO_IPV6,
+                            socket.IPV6_V6ONLY, 0) # Allow both IPv4 and IPv6 connections
+
         sock.bind((str(self._ip), port))
         sock.setblocking(False)
 
@@ -47,21 +48,22 @@ class Listener:
         while self._running:
             try:
                 yield await self._connection_queue.get()
-            except asyncio.QueueShutDown:
-                pass
+            except (asyncio.QueueShutDown, asyncio.CancelledError):
+                return
 
     @property
     def port(self) -> int | None:
         return self._port
-    
+
     @property
     def ip(self) -> str:
         return str(self._ip)
-    
+
     @property
     def running(self) -> bool:
         return self._running
 
-    async def _handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+    async def _handle_client(self, reader: asyncio.StreamReader,
+                             writer: asyncio.StreamWriter) -> None:
         client = Client(reader, writer)
         await self._connection_queue.put(client)
