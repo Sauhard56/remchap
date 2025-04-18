@@ -52,10 +52,9 @@ class StartupWindow(BaseWindow):
         try:
             host = self._host_var.get()
             try:
-                # _ = ip_address(host)
                 port = int(self._port_var.get())
             except ValueError:
-                messagebox.showerror("Parsing Error", "Invalid host or port.")
+                messagebox.showerror("Parsing Error", "Invalid port.")
                 return
 
             if not 1 <= port <= 65535:
