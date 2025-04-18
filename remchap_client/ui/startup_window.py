@@ -23,47 +23,56 @@ class StartupWindow(BaseWindow):
         host_label = customtkinter.CTkLabel(self, text="Hostname/IP Address:", anchor="w")
         host_label.pack(fill="both", padx=20)
 
-        host_entry = customtkinter.CTkEntry(self, textvariable=self._host_var)
-        host_entry.pack(fill="both", padx=20)
+        self._host_entry = customtkinter.CTkEntry(self, textvariable=self._host_var)
+        self._host_entry.pack(fill="both", padx=20)
 
         port_label = customtkinter.CTkLabel(self, text="Port:", anchor="w")
         port_label.pack(fill="both", padx=20, pady=(10, 0))
 
-        port_entry = customtkinter.CTkEntry(self, textvariable=self._port_var)
-        port_entry.pack(fill="both", padx=20)
+        self._port_entry = customtkinter.CTkEntry(self, textvariable=self._port_var)
+        self._port_entry.pack(fill="both", padx=20)
 
-        connect_button = customtkinter.CTkButton(
+        self._connect_button = customtkinter.CTkButton(
             self,
             text="Connect",
             command=lambda: self._schedule_async_to_thread(
                 self._connect_button_callback()
             )
         )
-        connect_button.pack(pady=(30, 0))
+        self._connect_button.pack(pady=(30, 0))
 
         # Enter key callbacks
-        host_entry.bind("<Return>", lambda _: self.port_entry.focus())
-        port_entry.bind("<Return>", lambda _: (self.focus(), connect_button.invoke()))
+        self._host_entry.bind("<Return>", lambda _: self._port_entry.focus())
+        self._port_entry.bind("<Return>", lambda _: (self.focus(), self.connect_button.invoke()))
 
     async def _connect_button_callback(self) -> None:
-        host = self._host_var.get()
-        try:
-            _ = ip_address(host)
-            port = int(self._port_var.get())
-        except ValueError:
-            messagebox.showerror("Error", "Invalid host or port")
-            return
-
-        if not 1 <= port <= 65535:
-            messagebox.showerror("Error", "Port out of range (1 - 65535)")
-            return
+        self._host_entry.configure(state="disabled")
+        self._port_entry.configure(state="disabled")
+        self._connect_button.configure(state="disabled")
 
         try:
-            client = Client()
-            await client.connect(host, port)
-        except ConnectionRefusedError:
-            messagebox.showerror("Connection error", "Unable to connect to host")
-            return
+            host = self._host_var.get()
+            try:
+                _ = ip_address(host)
+                port = int(self._port_var.get())
+            except ValueError:
+                messagebox.showerror("Error", "Invalid host or port")
+                return
+
+            if not 1 <= port <= 65535:
+                messagebox.showerror("Error", "Port out of range (1 - 65535)")
+                return
+
+            try:
+                client = Client()
+                await client.connect(host, port)
+            except ConnectionRefusedError:
+                messagebox.showerror("Connection error", "Unable to connect to host")
+                return
+        finally:
+            self._host_entry.configure(state="normal")
+            self._port_entry.configure(state="normal")
+            self._connect_button.configure(state="normal")
 
         self._client = client
         self.after(0, self.destroy)
