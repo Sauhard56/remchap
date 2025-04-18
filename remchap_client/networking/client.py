@@ -18,7 +18,7 @@ class Client:
             self.disconnect()
 
         self._reader, self._writer = await asyncio.wait_for(
-            await asyncio.open_connection(host, port), timeout)
+            asyncio.open_connection(host, port), timeout)
 
         sock: socket.socket = self._writer.get_extra_info("socket")
         self._ip, self._port = sock.getpeername()[:2]
