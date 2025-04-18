@@ -13,7 +13,7 @@ class Client:
         self._port = None
         self._ip = None
 
-    async def connect(self, host: str, port: int, timeout: int | None = None) -> None:
+    async def connect(self, host: str, port: int, *, timeout: float | None = None) -> None:
         if self._connected:
             self.disconnect()
 
