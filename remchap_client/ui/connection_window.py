@@ -63,12 +63,28 @@ class ConnectionWindow(TopLevelBase):
             try:
                 client = Client()
                 await client.connect(host, port, timeout=5.0)
+
+                # Verify identity
+                signature = b"R3MCH4P"
+                buffer = bytearray()
+
+                while len(buffer) < len(signature):
+                    bytes_read = await client.read(len(signature) - len(buffer), timeout=5.0)
+                    if not bytes_read:
+                        break
+                    buffer.extend(bytes_read)
+
+                assert buffer == signature
             except ConnectionRefusedError:
                 messagebox.showerror("Connection Error", "Unable to connect to host.")
                 return
             except TimeoutError:
                 messagebox.showerror("Connection Error",
                                      "Connection timed out (took longer than 5.0s).")
+                return
+            except AssertionError:
+                messagebox.showerror("Identification Failed",
+                                     "Remchap server identity not matched.")
                 return
         finally:
             self._host_entry.configure(state="normal")
