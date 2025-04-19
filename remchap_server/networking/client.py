@@ -18,11 +18,15 @@ class Client:
         self._port = port
 
     async def read(self, n: int = -1, *, timeout: float | None = None) -> bytes:
-        data_read = await asyncio.wait_for(self._reader.read(n), timeout)
-        if not data_read:
-            self.close()
+        try:
+            data_read = await asyncio.wait_for(self._reader.read(n), timeout)
+            if not data_read:
+                self.close()
 
-        return data_read
+            return data_read
+        except ConnectionResetError:
+            self.close()
+            return b""
 
     async def write(self, data: bytes | bytearray | Sequence[int]) -> None:
         if self._connected:
