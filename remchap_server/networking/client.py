@@ -17,8 +17,8 @@ class Client:
         self._ip = ip_address(ip)
         self._port = port
 
-    async def read(self, n: int = -1) -> bytes:
-        data_read = await self._reader.read(n)
+    async def read(self, n: int = -1, *, timeout: float | None = None) -> bytes:
+        data_read = await asyncio.wait_for(self._reader.read(n), timeout)
         if not data_read:
             self.close()
 
