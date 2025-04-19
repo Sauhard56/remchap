@@ -42,42 +42,43 @@ class MainWindow(customtkinter.CTk):
         self._dispatcher.schedule_async_to_thread(self._client_start_reading())
 
     async def _client_start_reading(self) -> None:
-        strikes = 0
-        while self._client and self._client.connected and strikes < 3:
-            buffer = bytearray()
-            while (bytes_read := await self._client.read(4 - len(buffer))):
-                buffer.extend(bytes_read)
-                if len(buffer) == 4:
-                    break
-            try:
-                payload_size = int.from_bytes(buffer, "big")
-            except ValueError:
-                print("Server sent invalid bytes...")
-                strikes += 1
-                continue
+        try:
+            strikes = 0
+            while self._client and self._client.connected and strikes < 3:
+                buffer = bytearray()
 
-            buffer.clear()
+                while self._client.connected and len(buffer) < 4:
+                    bytes_read = await self._client.read(4 - len(buffer))
+                    buffer.extend(bytes_read)
 
-            while (bytes_read := await self._client.read(payload_size - len(buffer))):
-                buffer.extend(bytes_read)
-                if len(buffer) == payload_size:
-                    break
+                try:
+                    payload_size = int.from_bytes(buffer, "big")
+                except ValueError:
+                    print("Server sent invalid bytes...")
+                    strikes += 1
+                    continue
 
-            try:
-                content = buffer.decode("utf-8")
-                parsed: dict[str] = json.loads(content)
+                buffer.clear()
 
-                assert parsed.get("message")
-            except (UnicodeDecodeError, AssertionError, json.JSONDecodeError):
-                print("Server sent invalid bytes...")
-                strikes += 1
-                continue
+                while self._client.connected and len(buffer) < payload_size:
+                    bytes_read = await self._client.read(payload_size - len(buffer))
+                    buffer.extend(bytes_read)
 
-            self.after(0, lambda: self._chatframe.add_message_to_list(parsed.get("name"),
-                                                                      parsed.get("message")))
+                try:
+                    content = buffer.decode("utf-8")
+                    parsed: dict[str] = json.loads(content)
 
-        messagebox.showinfo("Disconnected", "Disconnected from the server! Exiting...")
-        self.after(0, self.destroy)
+                    assert parsed.get("message")
+                except (UnicodeDecodeError, AssertionError, json.JSONDecodeError):
+                    print("Server sent invalid bytes...")
+                    strikes += 1
+                    continue
+
+                self.after(0, lambda: self._chatframe.add_message_to_list(parsed.get("name"),
+                                                                        parsed.get("message")))
+        finally:
+            messagebox.showinfo("Disconnected", "Disconnected from the server! Exiting...")
+            self.after(0, self.destroy)
 
 class ChatFrame(customtkinter.CTkFrame):
     def __init__(self, master: customtkinter.CTk, dispatcher: AsyncDispatcher, **kwargs) -> None:
