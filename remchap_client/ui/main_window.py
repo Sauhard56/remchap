@@ -5,7 +5,6 @@ from tkinter import messagebox
 
 import customtkinter
 
-# from .connection_window import ConnectionWindow
 from .helper import AsyncDispatcher
 from .connection_window import ConnectionWindow
 from ..networking import Client
