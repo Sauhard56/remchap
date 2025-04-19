@@ -46,8 +46,12 @@ class MainWindow(customtkinter.CTk):
     async def _client_keepalive(self) -> None:
         # Keep the client alive by sending timed pings
         while self._client.connected:
-            ka_json = json.dumps({"type" : "ping"})
-            await self._client.write(ka_json.encode())
+            json_message = json.dumps({"type" : "ping"})
+
+            payload = len(json_message).to_bytes(4, "big")
+            payload += json_message.encode()
+
+            await self._client.write(payload.encode())
             await asyncio.sleep(3) # Every 3 seconds
 
     async def _client_start_reading(self) -> None:
@@ -55,7 +59,6 @@ class MainWindow(customtkinter.CTk):
             strikes = 0
             while self._client and self._client.connected and strikes < 3:
                 buffer = bytearray()
-
                 while len(buffer) < 4:
                     bytes_read = await self._client.read(4 - len(buffer))
                     if not bytes_read:
@@ -71,14 +74,14 @@ class MainWindow(customtkinter.CTk):
 
                 buffer.clear()
 
-                while self._client.connected and len(buffer) < payload_size:
+                while len(buffer) < payload_size:
                     bytes_read = await self._client.read(payload_size - len(buffer))
                     if not bytes_read:
                         return
                     buffer.extend(bytes_read)
 
                 try:
-                    content = buffer.decode("utf-8")
+                    content = buffer.decode()
                     parsed: dict[str] = json.loads(content)
 
                     assert parsed.get("message")
@@ -115,7 +118,8 @@ class ChatFrame(customtkinter.CTkFrame):
 
         self.message_entry.bind("<Return>", lambda _: (send_button.invoke(), send_button.focus()))
         send_button.bind("<Key>", lambda e: (self.message_entry.focus(),
-                                             self.message_entry.insert("end", e.char)))
+                                             self.message_entry.insert("end", e.char))
+                                             if e.char.isprintable() else None)
 
         self.message_entry.grid(row=1, column=0, sticky="nsew", padx=5, pady=(0, 5))
         send_button.grid(row=1, column=1, sticky="nsew", padx=5, pady=(0, 5))
