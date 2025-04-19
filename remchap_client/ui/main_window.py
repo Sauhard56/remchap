@@ -46,12 +46,12 @@ class MainWindow(customtkinter.CTk):
     async def _client_keepalive(self) -> None:
         # Keep the client alive by sending timed pings
         while self._client.connected:
-            json_message = json.dumps({"type" : "ping"})
+            json_message = json.dumps({"type" : "ping"}).encode()
 
             payload = len(json_message).to_bytes(4, "big")
-            payload += json_message.encode()
+            payload += json_message
 
-            await self._client.write(payload.encode())
+            await self._client.write(payload)
             await asyncio.sleep(3) # Every 3 seconds
 
     async def _client_start_reading(self) -> None:
