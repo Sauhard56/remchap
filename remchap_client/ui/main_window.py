@@ -175,7 +175,7 @@ class MessageFrame(customtkinter.CTkFrame):
             name_color = "orange"
 
         name_label = customtkinter.CTkLabel(self, height=1, text=name, text_color=name_color,
-                                            font=customtkinter.CTkFont("Ariel", 12, "bold"))
+                                            font=customtkinter.CTkFont("Arial", 12, "bold"))
         message_label = customtkinter.CTkLabel(self, height=1, text=message,
                                                justify="left", text_color=message_color)
         message_label.bind('<Configure>', lambda e: message_label.configure(
