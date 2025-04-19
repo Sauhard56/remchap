@@ -1,5 +1,6 @@
 import json
 import random
+import asyncio
 from tkinter import messagebox
 
 import customtkinter
@@ -39,7 +40,15 @@ class MainWindow(customtkinter.CTk):
         self._client = client
         self._chatframe.set_client(client)
         self.deiconify()
+        self._dispatcher.schedule_async_to_thread(self._client_keepalive())
         self._dispatcher.schedule_async_to_thread(self._client_start_reading())
+
+    async def _client_keepalive(self) -> None:
+        # Keep the client alive by sending timed pings
+        while self._client.connected:
+            ka_json = json.dumps({"type" : "ping"})
+            await self._client.write(ka_json.encode())
+            await asyncio.sleep(3) # Every 3 seconds
 
     async def _client_start_reading(self) -> None:
         try:
@@ -47,8 +56,10 @@ class MainWindow(customtkinter.CTk):
             while self._client and self._client.connected and strikes < 3:
                 buffer = bytearray()
 
-                while self._client.connected and len(buffer) < 4:
+                while len(buffer) < 4:
                     bytes_read = await self._client.read(4 - len(buffer))
+                    if not bytes_read:
+                        return
                     buffer.extend(bytes_read)
 
                 try:
@@ -62,6 +73,8 @@ class MainWindow(customtkinter.CTk):
 
                 while self._client.connected and len(buffer) < payload_size:
                     bytes_read = await self._client.read(payload_size - len(buffer))
+                    if not bytes_read:
+                        return
                     buffer.extend(bytes_read)
 
                 try:
@@ -115,7 +128,7 @@ class ChatFrame(customtkinter.CTkFrame):
             return
 
         if self._client and self._client.connected:
-            json_message = json.dumps({"message" : json_message})
+            json_message = json.dumps({"message" : json_message, "type" : "message"})
 
             payload = len(json_message).to_bytes(4, "big")
             payload += json_message.encode()
