@@ -9,17 +9,19 @@ clients: list[Client] = []
 async def handle_client(client: Client) -> None:
     clients.append(client)
     # -------------------------
-    buffer = bytearray()
+    # buffer = bytearray()
 
     while client.connected:
         byte_read = await client.read(1)
-        buffer.extend(byte_read)
+        # buffer.extend(byte_read)
 
-        if buffer[-1:] == b"\n":
-            for c in clients:
-                await c.write(buffer)
+        # if buffer[-1:] == b"\n":
+        #     for c in clients:
+        #         await c.write(buffer)
 
-            buffer.clear()
+        #     buffer.clear()
+        for c in clients:
+            await c.write(byte_read)
     # -------------------------
     clients.remove(client)
 
