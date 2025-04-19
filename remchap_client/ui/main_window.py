@@ -1,10 +1,13 @@
+import json
 import random
+from tkinter import messagebox
 
 import customtkinter
 
 # from .connection_window import ConnectionWindow
 from .helper import AsyncDispatcher
 from .connection_window import ConnectionWindow
+from ..networking import Client
 
 
 class MainWindow(customtkinter.CTk):
@@ -14,28 +17,74 @@ class MainWindow(customtkinter.CTk):
         super().__init__(fg_color, **kwargs)
 
         self._dispatcher = AsyncDispatcher()
+        self._client: Client = None
 
         self.title("Remchap")
         self.geometry("1024x612")
         self.minsize(612, 306)
         self.withdraw() # Hide the window
 
-        chatframe = ChatFrame(self)
-        chatframe.pack(fill="both", expand=True)
+        self._chatframe = ChatFrame(self, self._dispatcher)
+        self._chatframe.pack(fill="both", expand=True)
 
         self._connection_wnd = ConnectionWindow(self, self._dispatcher)
-        self._connection_wnd.on_close(self._after_startup_closed)
+        self._connection_wnd.on_close(self._after_connection_wnd_closed)
 
-    def _after_startup_closed(self) -> None:
+    def _after_connection_wnd_closed(self) -> None:
         client = self._connection_wnd.client
         if client is None:
             self.destroy()
             return
 
+        self._client = client
+        self._chatframe.set_client(client)
+        self.deiconify()
+        self._dispatcher.schedule_async_to_thread(self._client_start_reading())
+
+    async def _client_start_reading(self) -> None:
+        strikes = 0
+        while self._client and self._client.connected and strikes < 3:
+            buffer = bytearray()
+            while (bytes_read := await self._client.read(4 - len(buffer))):
+                buffer.extend(bytes_read)
+                if len(buffer) == 4:
+                    break
+            try:
+                payload_size = int.from_bytes(buffer, "big")
+            except ValueError:
+                print("Server sent invalid bytes...")
+                strikes += 1
+                continue
+
+            buffer.clear()
+
+            while (bytes_read := await self._client.read(payload_size - len(buffer))):
+                buffer.extend(bytes_read)
+                if len(buffer) == payload_size:
+                    break
+
+            try:
+                content = buffer.decode("utf-8")
+                parsed: dict[str] = json.loads(content)
+
+                assert parsed.get("message")
+            except (UnicodeDecodeError, AssertionError, json.JSONDecodeError):
+                print("Server sent invalid bytes...")
+                strikes += 1
+                continue
+
+            self.after(0, lambda: self._chatframe.add_message_to_list(parsed.get("name"),
+                                                                      parsed.get("message")))
+
+        messagebox.showinfo("Disconnected", "Disconnected from the server! Exiting...")
+        self.after(0, self.destroy)
 
 class ChatFrame(customtkinter.CTkFrame):
-    def __init__(self, master: customtkinter.CTk, **kwargs) -> None:
+    def __init__(self, master: customtkinter.CTk, dispatcher: AsyncDispatcher, **kwargs) -> None:
         super().__init__(master, fg_color="transparent", **kwargs)
+
+        self._client: Client = None
+        self._dispatcher = dispatcher
 
         self.rowconfigure(0, weight=1)
         self.rowconfigure(1, weight=0)
@@ -61,23 +110,33 @@ class ChatFrame(customtkinter.CTkFrame):
         self.message_listframe.grid(row=0, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
 
     def _send_button_callback(self) -> None:
-        if not (message := self.message_entry.get().strip()):
+        if not (json_message := self.message_entry.get().strip()):
             return
 
-        # TODO: add send message logic
+        if self._client and self._client.connected:
+            json_message = json.dumps({"message" : json_message})
+
+            payload = len(json_message).to_bytes(4, "big")
+            payload += json_message.encode()
+
+            self._dispatcher.schedule_async_to_thread(self._client.write(payload))
 
         self.after(0, lambda: self.message_entry.delete(0, customtkinter.END))
 
-    def _add_message_to_list(self, message_frame: "MessageFrame") -> None:
+    def add_message_to_list(self, name: str | None, message: str) -> None:
+        message_frame = MessageFrame(self.message_listframe, name, message)
         message_frame.pack(anchor="w", fill="x", pady=2)
 
         # Scroll to bottom
         self.after(1, lambda: self.message_listframe._parent_canvas.yview_moveto(1.0)) # pylint: disable=protected-access
 
+    def set_client(self, client: Client) -> None:
+        self._client = client
+
 class MessageFrame(customtkinter.CTkFrame):
     _prev_color = None
 
-    def __init__(self, master, name: str, message: str, **kwargs) -> None:
+    def __init__(self, master, name: str | None, message: str, **kwargs) -> None:
         super().__init__(master, fg_color="#1A1A1E", **kwargs)
 
         while True:
@@ -89,9 +148,18 @@ class MessageFrame(customtkinter.CTkFrame):
                 MessageFrame._prev_color = name_color
                 break
 
+        if name:
+            message_color = None
+        else:
+            # Server message
+            message_color = "cyan"
+            name = "[Server]"
+            name_color = "orange"
+
         name_label = customtkinter.CTkLabel(self, height=1, text=name, text_color=name_color,
                                             font=customtkinter.CTkFont("Ariel", 12, "bold"))
-        message_label = customtkinter.CTkLabel(self, height=1, text=message, justify="left")
+        message_label = customtkinter.CTkLabel(self, height=1, text=message,
+                                               justify="left", text_color=message_color)
         message_label.bind('<Configure>', lambda e: message_label.configure(
             wraplength=message_label.winfo_width()))
 
