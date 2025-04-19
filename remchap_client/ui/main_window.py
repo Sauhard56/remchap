@@ -45,10 +45,10 @@ class MainWindow(customtkinter.CTk):
     async def _client_keepalive(self) -> None:
         # Keep the client alive by sending timed pings
         while self._client.connected:
-            json_message = json.dumps({"type" : "ping"}).encode()
+            json_encoded = json.dumps({"type" : "ping"}).encode()
 
-            payload = len(json_message).to_bytes(4, "big")
-            payload += json_message
+            payload = len(json_encoded).to_bytes(4, "big")
+            payload += json_encoded
 
             await self._client.write(payload)
             await asyncio.sleep(3) # Every 3 seconds
@@ -127,14 +127,19 @@ class ChatFrame(customtkinter.CTkFrame):
         self.message_listframe.grid(row=0, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
 
     def _send_button_callback(self) -> None:
-        if not (json_message := self.message_entry.get().strip()):
+        if not (message := self.message_entry.get().strip()):
+            return
+
+        if len(message) > 2000:
+            messagebox.showerror("Message Too Large",
+                                "Your message exceeds text limit of 2000 characters.")
             return
 
         if self._client and self._client.connected:
-            json_message = json.dumps({"message" : json_message, "type" : "message"})
+            json_encoded = json.dumps({"message" : message, "type" : "message"}).encode()
 
-            payload = len(json_message).to_bytes(4, "big")
-            payload += json_message.encode()
+            payload = len(json_encoded).to_bytes(4, "big")
+            payload += json_encoded
 
             self._dispatcher.schedule_async_to_thread(self._client.write(payload))
 

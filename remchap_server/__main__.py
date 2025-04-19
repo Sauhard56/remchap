@@ -26,6 +26,10 @@ async def handle_client(client: Client) -> None:
                 buffer.extend(data)
 
             size = int.from_bytes(buffer, "big")
+
+            # Content too large, no need to process
+            if size > 2048:
+                break
             buffer.clear()
 
             while len(buffer) < size:
