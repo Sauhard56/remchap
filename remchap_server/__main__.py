@@ -114,16 +114,23 @@ async def main() -> None:
 
     ip = args.address
     port = args.port
-    listener = Listener(ip)
+
+    if not 0 < port < 65536:
+        print("Error: port out of range (1 ~ 65535).")
+        return
 
     try:
+        listener = Listener(ip)
         await listener.start_server(port)
     except OSError as e:
         if e.errno == errno.EADDRINUSE:
-            print("Error: Port is already in use.")
+            print("Error: port is already in use.")
             return
         else:
             raise
+    except ValueError:
+        print("Error: invalid IP address.")
+        return
 
     print(f"Started server on {ip}:{port}")
     async for client in listener.incoming():
