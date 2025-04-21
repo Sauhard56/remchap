@@ -95,6 +95,7 @@ class MainWindow(customtkinter.CTk):
             messagebox.showinfo("Disconnected", "Disconnected from the server! Exiting...")
             self.after(0, self.destroy)
 
+
 class ChatFrame(customtkinter.CTkFrame):
     def __init__(self, master: customtkinter.CTk, dispatcher: AsyncDispatcher, **kwargs) -> None:
         super().__init__(master, fg_color="transparent", **kwargs)
@@ -154,6 +155,7 @@ class ChatFrame(customtkinter.CTkFrame):
 
     def set_client(self, client: Client) -> None:
         self._client = client
+
 
 class MessageFrame(customtkinter.CTkFrame):
     _prev_color = None
